@@ -11,7 +11,18 @@ contract MMR {
     }
     
     function calculate() public {
-        hashes[0] = blockhash(nblock);
+        bytes32 nhash = blockhash(nblock);
+        
+        for (uint k = 0; k < NHASHES; k++) {
+            if (uint(hashes[k]) == 0) {
+                hashes[k] = nhash;
+                break;
+            }
+            
+            nhash = keccak256(abi.encodePacked(hashes[k], nhash));
+            hashes[k] = 0;
+        }
+        
         nblock++;
     }
 }
