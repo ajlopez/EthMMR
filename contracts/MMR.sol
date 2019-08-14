@@ -9,5 +9,10 @@ contract MMR {
     constructor() public {
         nblock = block.number;
     }
+    
+    function calculate() public {
+        hashes[0] = blockhash(nblock);
+        nblock++;
+    }
 }
 
