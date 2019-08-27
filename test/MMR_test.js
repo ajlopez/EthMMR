@@ -1,6 +1,29 @@
 
 const MMR = artifacts.require('./MMR.sol');
 
+let jsonrpcid = new Date().getTime();
+
+// from https://ethereum.stackexchange.com/questions/11444/web3-js-with-promisified-api
+
+const promisify = (inner) =>
+  new Promise((resolve, reject) =>
+    inner((err, res) => {
+      if (err) { reject(err) }
+
+      resolve(res);
+    })
+);
+
+// https://medium.com/@contacttomnash/handy-helper-functions-for-solidity-development-with-truffle-39d14a371c12
+
+const mineOneBlock = async () => {
+  await promisify(cb => web3.currentProvider.send({
+    jsonrpc: '2.0',
+    method: 'evm_mine',
+    id: jsonrpcid++
+  }, cb))
+};
+
 contract('MMR', function (accounts) {
     beforeEach(async function () {
         this.mmr = await MMR.new();
@@ -80,6 +103,25 @@ contract('MMR', function (accounts) {
         for (let k = 2; k < 64; k++) {
             const hash = await this.mmr.hashes(k);
             assert.equal(hash, 0);
+        }
+    });
+    
+    it('calculate many blocks', async function() {
+        const initialBlock = await this.mmr.nblock();
+        await mineOneBlock();
+        await mineOneBlock();
+        await mineOneBlock();
+
+        const result = await this.mmr.calculate();
+        
+        assert.ok(result);
+        assert.ok(result.logs);
+        assert.equal(result.logs.length, 4);
+        
+        for (let k = 0; k < 4; k++) {
+            assert.equal(result.logs[k].event, "MerkleMountainRange");
+            assert.equal(result.logs[k].address, this.mmr.address);
+            assert.equal(result.logs[k].args.noblock.toNumber(), initialBlock.toNumber() + k + 1);
         }
     });
 });

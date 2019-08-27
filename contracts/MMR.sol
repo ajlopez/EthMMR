@@ -16,6 +16,13 @@ contract MMR {
     }
     
     function calculate() public {
+        uint current = block.number;
+        
+        while (current > nblock)
+            calculateBlock();
+    }
+    
+    function calculateBlock() private {
         bytes32 bhash = blockhash(nblock);
         bytes32 hash = bhash;
         
