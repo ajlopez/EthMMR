@@ -18,7 +18,15 @@ contract('MMR', function (accounts) {
     
     it('calculate one block', async function() {
         const initialBlock = await this.mmr.nblock();
-        await this.mmr.calculate();
+        const result = await this.mmr.calculate();
+        
+        assert.ok(result);
+        assert.ok(result.logs);
+        assert.equal(result.logs.length, 1);
+        assert.equal(result.logs[0].event, "MerkleMountainRange");
+        assert.equal(result.logs[0].address, this.mmr.address);
+        assert.equal(result.logs[0].args.noblock.toNumber(), initialBlock.toNumber() + 1);
+        
         const newBlock = await this.mmr.nblock();
         
         assert.equal(newBlock.toNumber(), initialBlock.toNumber() + 1);
@@ -28,6 +36,8 @@ contract('MMR', function (accounts) {
         
         const nhash = await this.mmr.nhash();
         assert.notEqual(nhash, 0);
+        assert.equal(result.logs[0].args.blockhash, nhash);
+        assert.equal(result.logs[0].args.mmr, nhash);
         
         const hash = await this.mmr.hashes(0);        
         assert.notEqual(hash, 0);
@@ -41,7 +51,15 @@ contract('MMR', function (accounts) {
     it('calculate two blocks', async function() {
         const initialBlock = await this.mmr.nblock();
         await this.mmr.calculate();
-        await this.mmr.calculate();
+
+        const result = await this.mmr.calculate();
+        assert.ok(result);
+        assert.ok(result.logs);
+        assert.equal(result.logs.length, 1);
+        assert.equal(result.logs[0].event, "MerkleMountainRange");
+        assert.equal(result.logs[0].address, this.mmr.address);
+        assert.equal(result.logs[0].args.noblock.toNumber(), initialBlock.toNumber() + 2);
+
         const newBlock = await this.mmr.nblock();
         
         assert.equal(newBlock.toNumber(), initialBlock.toNumber() + 2);
@@ -51,6 +69,7 @@ contract('MMR', function (accounts) {
 
         const nhash = await this.mmr.nhash();
         assert.notEqual(nhash, 0);
+        assert.equal(result.logs[0].args.mmr, nhash);
 
         const hash = await this.mmr.hashes(0);        
         assert.equal(hash, 0);

@@ -9,12 +9,15 @@ contract MMR {
     uint public nhashes;
     bytes32[NHASHES] public hashes;
     
+    event MerkleMountainRange(uint noblock, bytes32 blockhash, bytes32 mmr);
+    
     constructor() public {
         nblock = block.number;
     }
     
     function calculate() public {
-        bytes32 hash = blockhash(nblock);
+        bytes32 bhash = blockhash(nblock);
+        bytes32 hash = bhash;
         
         for (uint k = 0; k < NHASHES; k++) {
             if (uint(hashes[k]) == 0) {
@@ -37,11 +40,16 @@ contract MMR {
         for (uint k = 0; k < nhashes; k++) {
             if (uint(hashes[k]) == 0)
                 continue;
-                
-            newhash = keccak256(abi.encodePacked(hashes[k], newhash));
+            
+            if (newhash == bytes32(0))
+                newhash = hashes[k];
+            else
+                newhash = keccak256(abi.encodePacked(hashes[k], newhash));
         }
         
         nhash = newhash;
+        
+        emit MerkleMountainRange(nblock, bhash, nhash);
     }
 }
 
